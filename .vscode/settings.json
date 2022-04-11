@@ -1,0 +1,12 @@
+{
+  "C_Cpp.intelliSenseEngine": "Tag Parser",
+  "files.associations": {
+    "task.h": "c",
+    "cmd_decl.h": "c",
+    "cmd_system.h": "c",
+    "*.inc": "c",
+    "*.ipp": "c"
+  },
+  "idf.flashType": "UART",
+  "idf.portWin": "COM3"
+}
