@@ -1,0 +1,25 @@
+#!/bin/bash
+prefix=`cat CMakeLists.txt | sed 's#(# #' | sed 's#)# #' | awk '/^project/ {print $NF}'`
+date=`date --rfc-3339 date`
+ver=`cat version.txt 2>/dev/null`
+if [ x"" != x${ver} ]; then
+        ver=${ver}_
+fi
+
+ota=build/${prefix}_${date}_ota.bin
+single=build/${prefix}_${date}_single.bin
+
+dd if=build/${prefix}.bin of=${ota}
+
+dd if=build/bootloader/bootloader.bin of=${single} bs=4096 seek=1
+dd if=build/partition_table/partition-table.bin of=${single} bs=4096 seek=8
+dd if=build/ota_data_initial.bin of=${single} bs=4096 seek=14
+dd if=build/${prefix}.bin of=${single} bs=4096 seek=16
+#dd if=/dev/zero of=${single} bs=1M count=2 seek=2
+
+md5sum ${ota} ${single}
+ls -l ${ota} ${single}
+ls -lh ${ota} ${single}
+
+rsync --progress -avzh ${ota} ${ram_all} ${single} /mnt/d/JavaScript_Code/http_download
+# rsync --progress -avzhe 'ssh -i /tmp/testonly' ${ota} root@117.73.13.129:/data/iabg/firmware

@@ -1,82 +1,25 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_task_wdt.h"
-#include "driver/gpio.h"
-#include "cmd_decl.h"
+#include "esp_system.h"
+#include "esp_log.h"
+#include "esp_console.h"
+#include "esp_vfs_dev.h"
+#include "driver/uart.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
+#include "cmd_decl.h"
 #include "esp_vfs_fat.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_console.h"
-#include "esp_vfs_dev.h"
-#include "driver/uart.h"
 
-#define COM_PIN 2
+#define MOUNT_PATH "/data"
+#define HISTORY_PATH MOUNT_PATH "/history.txt"
 
-#define LED_OFF 1
-#define LED_ON  0
-
-static const char* TAG = "example";
 #define PROMPT_STR CONFIG_IDF_TARGET
+static const char* TAG = "console";
 
-void task1()
-{
-    esp_task_wdt_add(NULL);
-    while (1)
-    {
-        // printf("test1_task\r\n");
-        esp_task_wdt_reset();
-        // printf("wdt_reset\r\n");
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-    }
-    
-}
-
-
-void task2()
-{
-    esp_task_wdt_add(NULL);
-    while (1)
-    {
-        // printf("test2_task\r\n");
-        esp_task_wdt_reset();
-        // printf("wdt_reset\r\n");
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-    }
-    
-}
-
-void Blinker()
-{
-    gpio_reset_pin(COM_PIN);
-
-    gpio_set_direction(COM_PIN, GPIO_MODE_OUTPUT);
-    while (1)
-    {
-        gpio_set_level(COM_PIN,LED_OFF);
-        vTaskDelay(300 / portTICK_PERIOD_MS);
-
-        gpio_set_level(COM_PIN,LED_ON);
-        vTaskDelay(300 / portTICK_PERIOD_MS);
-    }
-    
-}
-
-static void initialize_nvs(void)
-{
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK( nvs_flash_erase() );
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(err);
-}
-
-static void initialize_console(void)
+void initialize_console(void)
 {
     /* Drain stdout before reconfiguring it */
     fflush(stdout);
@@ -136,21 +79,48 @@ static void initialize_console(void)
     linenoiseHistorySetMaxLen(100);
 
     /* Don't return empty lines */
-    linenoiseAllowEmpty(true);
+    // linenoiseAllowEmpty(false);
 
-#if CONFIG_STORE_HISTORY
+
     /* Load command history from filesystem */
     linenoiseHistoryLoad(HISTORY_PATH);
-#endif
+
 }
 
-
-void user_console_loop()
+void console_start()
 {
+
+    /* Register commands */
+    esp_console_register_help_command();
+    register_system();
+    register_wifi();
+    register_nvs();
+
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
-    const char *prompt = "esp32> ";
+    const char* prompt = LOG_COLOR_I PROMPT_STR "> " LOG_RESET_COLOR;
+
+    printf("\n"
+           "This is an example of ESP-IDF console component.\n"
+           "Type 'help' to get the list of commands.\n"
+           "Use UP/DOWN arrows to navigate through command history.\n"
+           "Press TAB when typing command name to auto-complete.\n"
+           "Press Enter or Ctrl+C will terminate the console environment.\n");
+
+    /* Figure out if the terminal supports escape sequences */
+    int probe_status = linenoiseProbe();
+    if (probe_status) { /* zero indicates success */
+        printf("\n"
+               "Your terminal application does not support escape sequences.\n"
+               "Line editing and history features are disabled.\n"
+               "On Windows, try using Putty instead.\n");
+        linenoiseSetDumbMode(1);
+        /* Since the terminal doesn't support escape sequences,
+         * don't use color codes in the prompt.
+         */
+        prompt = PROMPT_STR "> ";
+    }
 
     /* Main loop */
     while(true) {
@@ -164,10 +134,8 @@ void user_console_loop()
         /* Add the command to the history if not empty*/
         if (strlen(line) > 0) {
             linenoiseHistoryAdd(line);
-#if CONFIG_STORE_HISTORY
             /* Save command history to filesystem */
             linenoiseHistorySave(HISTORY_PATH);
-#endif
         }
 
         /* Try to run the command */
@@ -190,34 +158,25 @@ void user_console_loop()
     esp_console_deinit();
 }
 
+static esp_console_repl_t *s_repl = NULL;
 
-void app_main(void)
+void vShellInit(void)
 {
-    initialize_nvs();
+	esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+	// install console REPL environment
+	esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+	ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
 
-#if CONFIG_STORE_HISTORY
-    initialize_filesystem();
-    ESP_LOGI(TAG, "Command history enabled");
-#else
-    ESP_LOGI(TAG, "Command history disabled");
-#endif
-    initialize_console();
 
-    /* Register commands */
-    esp_console_register_help_command();
+	/* Register commands */
+	esp_console_register_help_command();
+    register_nvs();
     register_system();
     register_wifi();
-    register_nvs();
-
-    const char* prompt = LOG_COLOR_I PROMPT_STR "> " LOG_RESET_COLOR;
-
-    esp_task_wdt_init(4, true);
-    printf("Initialize TWDT\n");
-
-    xTaskCreate(task1, "task1", 5*1024, NULL, 5, NULL);
-    xTaskCreate(task2, "task2", 5*1024, NULL, 5, NULL);
-    xTaskCreate(Blinker, "Blinker", 5*1024, NULL, 5, NULL);
-    xTaskCreate(user_console_loop, "user_console_loop", 8*1024, NULL, 4, NULL);
-    // user_console_loop();
-
+    register_ota();
+	// printf("============================================================\r\n");
+	// printf("              shell command initialized                     \r\n ");
+	// printf("============================================================\r\n");
+	// start console REPL
+	ESP_ERROR_CHECK(esp_console_start_repl(s_repl));
 }
