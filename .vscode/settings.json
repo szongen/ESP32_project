@@ -1,12 +1,32 @@
 {
   "C_Cpp.intelliSenseEngine": "Tag Parser",
-  "files.associations": {
-    "task.h": "c",
-    "cmd_decl.h": "c",
-    "cmd_system.h": "c",
-    "*.inc": "c",
-    "*.ipp": "c"
-  },
+  "idf.portWin": "COM6",
   "idf.flashType": "UART",
-  "idf.portWin": "COM3"
+  "idf.adapterTargetName": "esp32",
+  "files.associations": {
+    "esp_console.h": "c",
+    "*.inc": "c",
+    "cmd_decl.h": "c",
+    "cmd_nvs.h": "c",
+    "nvs_flash.h": "c",
+    "esp_vfs_fat.h": "c",
+    "cmd_system.h": "c",
+    "cmd_wifi.h": "c",
+    "*.ipp": "c",
+    "array": "c",
+    "chrono": "c",
+    "deque": "c",
+    "format": "c",
+    "forward_list": "c",
+    "initializer_list": "c",
+    "list": "c",
+    "vector": "c",
+    "xhash": "c",
+    "xiosbase": "c",
+    "xstring": "c",
+    "xtree": "c",
+    "esp_vfs_dev.h": "c",
+    "cmd_ota.h": "c",
+    "esp_ota_ops.h": "c"
+  }
 }
