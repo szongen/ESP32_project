@@ -27,6 +27,11 @@
     "xtree": "c",
     "esp_vfs_dev.h": "c",
     "cmd_ota.h": "c",
-    "esp_ota_ops.h": "c"
+    "esp_ota_ops.h": "c",
+    "spi_master.h": "c",
+    "e2213js0c1.h": "c",
+    "gpio.h": "c",
+    "event_groups.h": "c",
+    "esp_tls.h": "c"
   }
 }

@@ -6,7 +6,7 @@
 #include "esp_log.h"
 // #include "user_main.h"
 
-#define COM_PIN 25
+#define COM_PIN 2
 
 #define LED_OFF 1
 #define LED_ON  0

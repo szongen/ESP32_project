@@ -22,6 +22,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "freertos/event_groups.h"
+#include "E2213JS0C1.h"
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC
 #error This example is incompatible with USB CDC console. Please try "console_usb" example instead.
@@ -193,8 +194,19 @@ void app_main(void)
     
     ESP_LOGI("wifi_init", "ssid:%s,password:%s", (char *)wifi_config.sta.ssid, (char *)wifi_config.sta.password);
     // ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, wifi_cfg));
+    E2213JS0C1_Init();
 
+    E2213JS0C1_ClearFullScreen(WHITE);
+    E2213JS0C1_SendImageData();
+    E2213JS0C1_SendUpdateCmd();
+    E2213JS0C1_TurnOffDCDC();
+    E2213JS0C1_ShowCharStr(0, 0, "Hello World", FONT_1608, BLACK, WHITE);
+    E2213JS0C1_SendImageData();
+    E2213JS0C1_SendUpdateCmd();
+    E2213JS0C1_TurnOffDCDC();
     // xTaskCreate(netmanage, "net", 3 * 1024, NULL, 5, NULL);
-    xTaskCreate(blink, "blink", 1 * 1024, NULL, 5, NULL);
+    extern void https_request_task(void *pvparameters);
+    xTaskCreate(blink, "blink", 2 * 1024, NULL, 5, NULL);
+    xTaskCreate(&https_request_task, "https_get_task", 8 *1024, NULL, 5, NULL);
 
 }
