@@ -30,6 +30,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "cJSON.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -52,6 +53,8 @@ static const char REQUEST[] = "GET " WEB_URL " HTTP/1.1\r\n"
                              "User-Agent: esp-idf/1.0 esp32\r\n"
                              "\r\n";
 
+
+extern QueueHandle_t QueueHandle_sys,QueueHandle_dis;
 /* Root cert for howsmyssl.com, taken from server_root_cert.pem
 
    The PEM file was extracted from the output of this command:
@@ -62,11 +65,11 @@ static const char REQUEST[] = "GET " WEB_URL " HTTP/1.1\r\n"
    To embed it in the app binary, the PEM file is named
    in the component.mk COMPONENT_EMBED_TXTFILES variable.
 */
-static void https_get_request(esp_tls_cfg_t cfg)
+void https_get_request(esp_tls_cfg_t cfg)
 {
     char buf[512];
     int ret, len;
-
+    int i= 0, num = 0,l1 = 0;
     struct esp_tls *tls = esp_tls_conn_http_new(WEB_URL, &cfg);
 
     if (tls != NULL) {
@@ -91,7 +94,8 @@ static void https_get_request(esp_tls_cfg_t cfg)
     } while (written_bytes < sizeof(REQUEST));
 
     ESP_LOGI(TAG, "Reading HTTP response...");
-
+    char buffer[3000],buffer1[2000];
+    memset(buffer,0,sizeof(buffer));
     do {
         len = sizeof(buf) - 1;
         bzero(buf, sizeof(buf));
@@ -112,23 +116,67 @@ static void https_get_request(esp_tls_cfg_t cfg)
         }
 
         len = ret;
-        ESP_LOGD(TAG, "%d bytes read", len);
+        ESP_LOGI(TAG, "%d bytes read", len);
         /* Print response directly to stdout as it is read */
         for (int i = 0; i < len; i++) {
             putchar(buf[i]);
         }
-        putchar('\n'); // JSON output doesn't have a newline at end
+        strcat(buffer,buf);
     } while (1);
-
+    printf("*************************************************************\n");
+    printf("buffer:%s\n",buffer);
+    printf("buffer len:%d\n",strlen(buffer));
+    printf("*************************************************************\n");
+    while (buffer[i]!=NULL)
+    {
+        if(buffer[i++] =='\n')
+        {
+            num++;
+            if(num == 7)
+            {
+                l1 = i;
+            }
+        }
+    }
+    int ii = 0;
+    memset(buffer1,0,sizeof(buffer1));
+    while (buffer[ii+l1] != NULL ||ii+l1 != strlen(buffer))
+    {
+        i = ii;
+        if(ii <= 2000)
+        {
+            buffer1[ii++] = buffer[i + l1];
+        }
+        else
+        {
+            printf("buffer1 is not enough");
+            break;
+        }
+    }
+    printf("*************************************************************\n");
+    printf("buffer1:%s\n",buffer1);
+    printf("buffer1 strlen %d\n",strlen(buffer1));
+    printf("*************************************************************\n");
+    cJSON *root = NULL;
+    root = cJSON_Parse(buffer1);
+    if (!root)
+    {
+        printf("cJSON_Parse is error Error : [%s]\n", cJSON_GetErrorPtr());
+    }
+    else
+    {
+        printf("cJSON_Parse is OK\r\n");
+        // snprintf(handler->content,sizeof(handler->content),"%s",cJSON_GetObjectItem(root, "content")->valuestring);
+        printf("motto:%s\n",cJSON_GetObjectItem(root, "content")->valuestring);
+        xQueueSend(QueueHandle_dis, cJSON_GetObjectItem(root, "content")->valuestring, 0);
+    }
+    cJSON_Delete(root);
+    
 exit:
     esp_tls_conn_delete(tls);
-    for (int countdown = 10; countdown >= 0; countdown--) {
-        ESP_LOGI(TAG, "%d...", countdown);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
 }
 
-static void https_get_request_using_crt_bundle(void)
+void https_get_request_using_crt_bundle(void)
 {
     ESP_LOGI(TAG, "https_request using crt bundle");
     esp_tls_cfg_t cfg = {
@@ -142,12 +190,12 @@ void https_request_task(void *pvparameters)
 {
     ESP_LOGI(TAG, "Start https_request example");
 
-    https_get_request_using_crt_bundle();
+    // https_get_request_using_crt_bundle();
     // https_get_request_using_cacert_buf();
     // https_get_request_using_global_ca_store();
 
     ESP_LOGI(TAG, "Finish https_request example");
-    vTaskDelete(NULL);
+    // vTaskDelete(NULL);
 }
 
 // void app_main(void)

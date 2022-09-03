@@ -220,6 +220,7 @@ void E2213JS0C1_SendImageData(void)
     /* ????????Frame?????? */  
     E2213JS0C1_WriteRegIndex(SECOND_FRAME_CMD);
     E2213JS0C1_WriteMultipleData(E2213JS0C1_SecondFrameBuffer,E2213JS0C1_BUFFER_SIZE);
+    
 }
 
 /**
@@ -339,14 +340,51 @@ void E2213JS0C1_ClearFullScreen(uint8_t color)
 void E2213JS0C1_DrawPoint(uint8_t xPos, uint8_t yPos, uint8_t color)
 {
     uint16_t i;
-    uint8_t n;
+    uint8_t n,temp;
     /* ?��?????????? */
-    if ((xPos > E2213JS0C1_XPOS_MAX) || (yPos > E2213JS0C1_YPOS_MAX))
+
+    if(ORIENTATION == Angle_0)
     {
-        return;
+        if ((xPos > E2213JS0C1_XPOS_MAX) || (yPos > E2213JS0C1_YPOS_MAX))
+        {
+            return;
+        }
     }
+    else if(ORIENTATION == Angle_90)
+    {
+        temp = xPos;
+        xPos = yPos;
+        yPos = temp;
+        if ((xPos > E2213JS0C1_XPOS_MAX) || (yPos > E2213JS0C1_YPOS_MAX))
+        {
+            return;
+        }
+        xPos = E2213JS0C1_XPOS_MAX - 1 - xPos;
+    }
+    else if(ORIENTATION == Angle_180)
+    {
+        if ((xPos > E2213JS0C1_XPOS_MAX) || (yPos > E2213JS0C1_YPOS_MAX))
+        {
+            return;
+        }
+        xPos = E2213JS0C1_XPOS_MAX - 1 - xPos;
+        yPos = E2213JS0C1_YPOS_MAX - 1 - yPos;
+    }
+    else if(ORIENTATION == Angle_270)
+    {
+        temp = xPos;
+        xPos = yPos;
+        yPos = temp;
+        if ((xPos > E2213JS0C1_XPOS_MAX) || (yPos > E2213JS0C1_YPOS_MAX))
+        {
+            return;
+        }
+        yPos = E2213JS0C1_YPOS_MAX - 1 - yPos;
+    }
+   
+
     /* ????????????????i???n��???��??? */
-    i = yPos * E2213JS0C1_BUFFER_WIDTH_SIZE + (xPos / 8);
+    i = yPos * E2213JS0C1_BUFFER_WIDTH_SIZE + (xPos >> 3);
     n = 7- (xPos % 8);
     /* ????��???? */
     switch(color)
@@ -533,7 +571,7 @@ uint8_t E2213JS0C1_ShowCharStr(uint8_t xStart, uint8_t yStart, char* str,
  * @param	yStart?????????????y??????
  * @param	bmpWidth??x???????????
  * @param	bmpHeight??y??????????
- * @param	fontColor:?????????
+ * @param	HORIZONTAL:?????????
  * @param	backgroundColor???????????
  * @param	pic????
  * @retval	none

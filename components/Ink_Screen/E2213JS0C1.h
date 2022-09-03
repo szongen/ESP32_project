@@ -49,6 +49,14 @@ enum ENUM_FILL
     SOLID,
     HOLLOW
 };
+
+enum ENUM_ORIENTATION_DIS
+{
+    Angle_0 = 0,
+    Angle_90,
+    Angle_180,
+    Angle_270 
+};
 /*屏幕参数*************************************************************************/
 /* X轴坐标0~103；Y轴坐标0~211 */
 #define E2213JS0C1_W 104
@@ -58,6 +66,7 @@ enum ENUM_FILL
 #define E2213JS0C1_BUFFER_SIZE (E2213JS0C1_W * E2213JS0C1_H / 8)
 #define E2213JS0C1_BUFFER_WIDTH_SIZE (E2213JS0C1_W / 8)
 #define E2213JS0C1_BUFFER_HEIGHT_SIZE (E2213JS0C1_H)
+#define ORIENTATION Angle_270 //显示方向
 /*颜色*****************************************************************************/
 // uint8_t 
 // {
@@ -107,9 +116,9 @@ enum ENUM_FILL
 #define SET_TEMP_25_DATA        0x19
 #define ACTIVE_TEMP_CMD         0xE0
 #define ACTIVE_TEMP_25_DATA     0x02
-//#define PANEL_SET_CMD         0x00
-//#define PANEL_SET_DATA_1      0xCF
-//#define PANEL_SET_DATA_2      0x89
+#define PANEL_SET_CMD         0x00
+#define PANEL_SET_DATA_1      0xCF
+#define PANEL_SET_DATA_2      0x89
 #define FIRST_FRAME_CMD         0x10
 #define SECOND_FRAME_CMD        0x13
 #define TURN_ON_DCDC_CMD        0x04

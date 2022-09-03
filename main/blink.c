@@ -16,7 +16,6 @@ void blink()
     gpio_reset_pin(COM_PIN);
 
     gpio_set_direction(COM_PIN, GPIO_MODE_OUTPUT);
-
     while(!0) {
         gpio_set_level(COM_PIN, LED_OFF);
         vTaskDelay(500 / portTICK_PERIOD_MS);
