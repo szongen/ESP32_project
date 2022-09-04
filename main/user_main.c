@@ -369,17 +369,18 @@ void http_request_task(void *pvparameters)
     while (1)
     {
         if(handler->network_ConnetFlag == 1)
-        {   
-            if(uiNow == 0 || (uiNow + 240) <= (xTaskGetTickCount() / 100) )
+        {
+            if(uiNow == 0 || (uiNow + 60*60) <= (xTaskGetTickCount() / 100) )
             {
                 http_client_test();
 
                 extern void https_get_request_using_crt_bundle();
                 https_get_request_using_crt_bundle();
                 uiNow = xTaskGetTickCount() / 100;
-                esp_task_wdt_reset();
+                
            }
        }
+       vTaskDelay(1000);
     }
     
 }
@@ -445,7 +446,7 @@ void app_main(void)
 
     // extern void https_request_task(void *pvparameters);
     xTaskCreate(&cJSON_task, "cJSON_task", 8 * 1024, NULL, 5, NULL);
-    xTaskCreate(blink, "blink", 2 * 1024, NULL, 5, NULL);
+    xTaskCreate(&blink, "blink", 2 * 1024, NULL, 5, NULL);
     xTaskCreate(&http_request_task, "https_get_task", 16 *1024, NULL, 5, NULL);
 
 

@@ -5,6 +5,7 @@
 #include "sdkconfig.h"
 #include "esp_log.h"
 // #include "user_main.h"
+#include "esp_task_wdt.h"
 
 #define COM_PIN 2
 
